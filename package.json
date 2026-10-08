@@ -1,0 +1,32 @@
+{
+  "name": "shinbun-maker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "shinbun.css で、文章と画像から紙面を作り、PDF や PNG で保存する Web アプリ。",
+  "author": "kiwamizamurai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamimen/shinbun-maker.git"
+  },
+  "homepage": "https://kamimen.github.io/shinbun-maker/",
+  "bugs": {
+    "url": "https://github.com/kamimen/shinbun-maker/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3"
+  }
+}

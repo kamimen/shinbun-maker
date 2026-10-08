@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="t">
+<title id="t">紙面メーカー</title>
+<rect x="3" y="3" width="250" height="250" rx="44" fill="#e6e3da" stroke="#1f1b16" stroke-width="6"/>
+<rect x="156" y="36" width="64" height="104" fill="#1f1b16"/>
+<rect x="172" y="48" width="32" height="20" fill="#e6e3da"/>
+<rect x="172" y="80" width="32" height="20" fill="#e6e3da"/>
+<rect x="36" y="36" width="104" height="30" fill="#1f1b16"/>
+<line x1="52" y1="84" x2="52" y2="214" stroke="#1f1b16" stroke-width="4"/>
+<line x1="76" y1="84" x2="76" y2="190" stroke="#1f1b16" stroke-width="4"/>
+<rect x="104" y="84" width="48" height="56" fill="none" stroke="#a3281f" stroke-width="4" stroke-dasharray="6 4"/>
+<rect x="98" y="78" width="12" height="12" fill="#e6e3da" stroke="#a3281f" stroke-width="4"/>
+<rect x="146" y="134" width="12" height="12" fill="#e6e3da" stroke="#a3281f" stroke-width="4"/>
+<path d="M170 164 L170 220 L184 207 L195 232 L206 227 L195 202 L214 202 Z" fill="#1f1b16" stroke="#e6e3da" stroke-width="4" stroke-linejoin="round"/>
+</svg>

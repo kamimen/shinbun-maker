@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>紙面メーカー | 新聞の紙面を作って、PDF・PNG で保存</title>
+  <meta name="description" content="文章と画像から新聞の紙面を作り、PDF や PNG で保存する Web アプリです。縦組みと横組みの両方で組めます。文章や画像は、ブラウザの中だけで扱います。">
+  <link rel="canonical" href="https://kamimen.github.io/shinbun-maker/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="紙面メーカー">
+  <meta property="og:title" content="紙面メーカー | 新聞の紙面を作って、PDF・PNG で保存">
+  <meta property="og:description" content="文章と画像から新聞の紙面を作り、PDF や PNG で保存する Web アプリです。縦組みと横組みの両方で組めます。文章や画像は、ブラウザの中だけで扱います。">
+  <meta property="og:url" content="https://kamimen.github.io/shinbun-maker/">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:image" content="https://kamimen.github.io/shinbun-maker/og-ja.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="紙面メーカーのアイコンと、新聞の紙面を作って PDF・PNG で保存するという説明">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="./assets/icon.svg">
+</head>
+<body>
+  <div id="app">
+    <header class="bar">
+      <strong class="brand">紙面メーカー</strong>
+      <details class="menu" id="file-menu">
+        <summary>ファイル</summary>
+        <div class="menu-list">
+          <button type="button" id="new-v">新しい紙面（縦組み）</button>
+          <button type="button" id="new-h">新しい紙面（横組み）</button>
+          <button type="button" id="sample-v">見本を開く（縦組み）</button>
+          <button type="button" id="sample-h">見本を開く（横組み）</button>
+          <hr>
+          <button type="button" id="save-json">続きを編集するファイルに保存</button>
+          <button type="button" id="load-json">保存したファイルを開く</button>
+        </div>
+        <input type="file" id="json-file" accept="application/json,.json" hidden>
+      </details>
+      <div class="group">
+        <button type="button" id="undo">元に戻す</button>
+        <button type="button" id="redo">やり直す</button>
+      </div>
+      <div class="group">
+        <label class="check"><input type="checkbox" id="grid" checked> 格子</label>
+        <select id="zoom" aria-label="表示の大きさ">
+          <option value="1" selected>表示 100%</option>
+          <option value="0.75">表示 75%</option>
+          <option value="0.5">表示 50%</option>
+          <option value="fit">全体を表示</option>
+        </select>
+      </div>
+      <div class="group group-end">
+        <select id="page-size" aria-label="PDF の用紙"></select>
+        <button type="button" id="pdf">PDF</button>
+        <select id="png-scale" aria-label="PNG の倍率">
+          <option value="1">PNG 等倍</option>
+          <option value="2" selected>PNG 2 倍</option>
+          <option value="3">PNG 3 倍</option>
+        </select>
+        <button type="button" id="png">PNG</button>
+      </div>
+    </header>
+    <aside class="tools-col">
+      <div class="tools" id="tools"></div>
+      <h2 class="parts-title">部品の一覧</h2>
+      <div class="parts" id="parts"></div>
+    </aside>
+    <main class="stage-wrap">
+      <div class="stage-box"><div class="stage" id="stage"></div></div>
+    </main>
+    <aside class="panel" id="panel"></aside>
+    <footer class="status" id="status"></footer>
+  </div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
