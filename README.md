@@ -1,46 +1,44 @@
-# 紙面メーカー
+# Shimen Maker (紙面メーカー)
 
-[shinbun.css](https://github.com/kamimen/shinbun-css) で、文章と画像から新聞の紙面を作り、PDF や PNG で保存する Web アプリです。縦組みと横組みの両方で組めます。
+A web app that lays out a newspaper page from your text and images with [shinbun.css](https://github.com/kamimen/shinbun-css), and saves it as PDF or PNG. It supports both vertical writing (縦組み, *tategumi*) and horizontal writing (横組み, *yokogumi*).
 
-![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![tested: Chrome](https://img.shields.io/badge/tested-Chrome-brightgreen) ![not tested: Firefox, Safari](https://img.shields.io/badge/not%20tested-Firefox%20%C2%B7%20Safari-red)
+English | [日本語](README_ja.md)
 
-日本語 | [English](README_en.md)
+- Place nameplates, articles, photos, boxes, horizontal headlines and ad slots, and drag them into position
+- Positions snap to the dan (column) and line grid (`data-sb-x / w / y / span` in shinbun.css)
+- Your text and images stay in this browser. Nothing is sent to a server
+- An article that does not fit its rectangle is reported as an overflow
+- Save as PNG (image), PDF (through the browser's print dialog), or JSON (to keep editing later)
 
-- 題字、記事、写真、囲み、横見出し、広告枠を置き、ドラッグで位置と大きさを決めます
-- 位置は、段と行の格子に合わせて決まります（shinbun.css の `data-sb-x / w / y / span`）
-- 文章や画像は、この端末のブラウザの中だけで扱います。サーバーには送りません
-- 記事が長方形に収まらないときは、「はみ出し」として知らせます
-- 作った紙面は、PNG（画像）、PDF（ブラウザの印刷から保存）、JSON（続きを編集するためのファイル）で保存できます
+## Usage
 
-## 使い方
+1. Add parts with the "＋" buttons on the left
+2. Click a part on the page to select it, and drag to move it. Drag a square at a corner to resize. You can also pick a part from the parts list on the left (useful when parts overlap, or to find an article that overflows). With the keyboard, arrow keys move it, Shift + arrow keys resize it, and Delete removes it. Use "Forward" and "Back" in the right panel to reorder overlapping parts
+3. Edit text, images and the numeric position in the right panel. Double-click a part to jump to its text field. You can also drop an image file onto the page
+4. If the page is larger than the screen, shrink it with the display menu in the top bar ("Fit to screen")
+5. Save with "PNG" or "PDF" in the top bar
 
-1. 左の「＋」で部品を置きます
-2. 紙面の部品をクリックして選び、ドラッグで動かします。四隅の四角をドラッグすると、大きさが変わります。左の「部品の一覧」からも選べます（重なって選びにくいとき、はみ出した記事を探すときに使います）。キーボードでは、矢印キーで動かし、Shift + 矢印キーで大きさを変え、Delete で削除します。重なりは、右のパネルの「前へ」「後ろへ」で入れ替えます
-3. 右のパネルで、文章や画像、位置の数値を直します。部品をダブルクリックすると、パネルの文章欄に移ります。画像ファイルは、紙面へドラッグ & ドロップしても入れられます
-4. 紙面が画面より大きいときは、上のバーの「表示」で縮小します（「全体を表示」）
-5. 上のバーの「PNG」または「PDF」で保存します
+"PDF" opens the browser's print dialog. Choose "Save as PDF" as the destination, and turn on background graphics. The paper size is chosen in the select next to the "PDF" button.
 
-「PDF」は、ブラウザの印刷画面を開きます。送信先を「PDF に保存」にしてください。用紙の大きさは、「PDF」の左の選択で決めます。印刷の画面では、背景のグラフィックスを有効にしてください。
-
-## ブラウザ対応
+## Browser support
 
 > [!CAUTION]
-> 表示を確認したのは Chrome だけです。Firefox と Safari では確認していません。PDF の保存は、印刷画面を開くところまでを確認しています。
+> Display was checked only in Chrome. Firefox and Safari have not been tested. For PDF, I checked up to opening the print dialog.
 
-## 開発
+## Development
 
 ```sh
 npm install
-npm run dev        # 開発サーバー
-npm test           # 単体テスト（座標の計算、状態の変更）
-npm run typecheck  # 型検査
-npm run build      # dist/ を作る
+npm run dev        # dev server
+npm test           # unit tests (coordinate math, state changes)
+npm run typecheck  # type check
+npm run build      # build dist/
 ```
 
-TypeScript と Vite で作っています。紙面の部品は、`vendor/` にある shinbun.css（CSS と JavaScript）を使います。
+Built with TypeScript and Vite. It uses shinbun.css (CSS and JavaScript) from `vendor/`.
 
-## ライセンス
+## License
 
 [MIT License](LICENSE)
 
-特定の新聞社の紙面を模したものではありません。見本の内容は、すべて架空です。
+This app does not imitate the pages of any particular newspaper. All content in the sample is fictional.
