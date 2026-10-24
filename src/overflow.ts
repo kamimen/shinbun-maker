@@ -12,7 +12,9 @@ function textOverflows(el: HTMLElement, beyond: (r: DOMRect, box: DOMRect) => bo
 export function overflows(el: HTMLElement): boolean {
   const vertical = getComputedStyle(el).writingMode.startsWith("vertical");
   if (el.classList.contains("sb-article")) {
-    return textOverflows(el, (r, box) => (vertical ? r.bottom > box.bottom + 1 : r.right > box.right + 1));
+    return textOverflows(el, (r, box) =>
+      vertical ? r.bottom > box.bottom + 1 || r.left < box.left - 1 : r.right > box.right + 1 || r.bottom > box.bottom + 1,
+    );
   }
   if (el.classList.contains("sb-box")) {
     return textOverflows(el, (r, box) => (vertical ? r.left < box.left - 1 : r.bottom > box.bottom + 1));
