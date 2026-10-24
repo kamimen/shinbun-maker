@@ -1,7 +1,7 @@
 import { autoTcy, findOverflow } from "../vendor/shinbun.js";
 import { axesOf, clampRect, indexAt, offsetOnAxis, overlappingIds, resizeRect, trackStarts } from "./grid.ts";
 import type { Box, Corner, Edge } from "./grid.ts";
-import { readImage } from "./image.ts";
+import { IMAGE_ERROR, readImage } from "./image.ts";
 import { buildPaper } from "./render.ts";
 import type { Store } from "./store.ts";
 import type { Rect } from "./types.ts";
@@ -51,7 +51,7 @@ function div(className: string, left: number, top: number, width: number, height
 
 export type Zoom = number | "fit";
 
-export function createStage(host: HTMLElement, store: Store, onStatus: (s: Status) => void) {
+export function createStage(host: HTMLElement, store: Store, onStatus: (s: Status) => void, notify: (text: string) => void) {
   const box = host.parentElement as HTMLElement;
   const wrap = box.parentElement as HTMLElement;
   let showGrid = true;
@@ -222,17 +222,22 @@ export function createStage(host: HTMLElement, store: Store, onStatus: (s: Statu
     drag.moved = true;
   });
 
-  host.addEventListener("dragover", (e) => {
+  // 紙面のまわりの余白に落としても受け取る
+  wrap.addEventListener("dragover", (e) => {
     if (e.dataTransfer?.types.includes("Files")) e.preventDefault();
   });
 
-  host.addEventListener("drop", async (e) => {
+  wrap.addEventListener("drop", async (e) => {
     const file = [...(e.dataTransfer?.files ?? [])].find((f) => f.type.startsWith("image/"));
     if (!file) return;
     e.preventDefault();
+    e.stopPropagation();
     const target = (e.target as Element).closest<HTMLElement>("[data-id]");
     const image = await readImage(file).catch(() => null);
-    if (!image) return;
+    if (!image) {
+      notify(IMAGE_ERROR);
+      return;
+    }
     const item = store.state.items.find((it) => it.id === target?.dataset.id);
     if (item?.kind === "photo") {
       store.update(item.id, { image }, "other");

@@ -187,6 +187,17 @@ button.danger { color: var(--accent); border-color: var(--accent); margin-top: 0
   background: var(--bg);
 }
 .field input[type="checkbox"] { align-self: flex-start; }
+.photo-controls { margin-bottom: 0.7rem; }
+.photo-thumb {
+  display: block;
+  width: 100%;
+  max-height: 10rem;
+  margin-bottom: 0.7rem;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
 .position { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.6rem; }
 
 .status {

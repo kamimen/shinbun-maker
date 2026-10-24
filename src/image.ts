@@ -1,5 +1,7 @@
 const MAX = 1600;
 
+export const IMAGE_ERROR = "画像を読み込めませんでした。JPEG・PNG・WebP の画像を選んでください";
+
 export async function readImage(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, MAX / Math.max(bitmap.width, bitmap.height));

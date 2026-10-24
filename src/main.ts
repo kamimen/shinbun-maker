@@ -28,7 +28,7 @@ function notify(text: string): void {
 
 const initial = (await loadState()) ?? sampleState("vertical");
 const store = new Store(initial);
-const stage = createStage($("stage"), store, showStatus);
+const stage = createStage($("stage"), store, showStatus, notify);
 const panel = createPanel($("panel"), store);
 
 function showStatus({ overlap, overflow }: Status): void {
@@ -113,6 +113,18 @@ $("json-file").addEventListener("change", async (e) => {
     alert("JSON を読み込めませんでした");
   }
   input.value = "";
+});
+// 紙面の外に画像を落としたとき、ブラウザが画像を開いて、編集中の画面から離れないようにする
+const isFileDrag = (e: DragEvent) => Boolean(e.dataTransfer?.types.includes("Files"));
+const onFileInput = (e: DragEvent) => e.target instanceof HTMLInputElement && e.target.type === "file";
+addEventListener("dragover", (e) => {
+  if (isFileDrag(e) && !onFileInput(e)) e.preventDefault();
+});
+addEventListener("drop", (e) => {
+  if (!isFileDrag(e) || onFileInput(e)) return;
+  e.preventDefault();
+  const hasImage = [...(e.dataTransfer?.files ?? [])].some((f) => f.type.startsWith("image/"));
+  notify(hasImage ? "画像は、紙面の上に落としてください" : "紙面に入れられるのは、画像のファイルだけです");
 });
 $("grid").addEventListener("change", (e) => stage.setGrid((e.target as HTMLInputElement).checked));
 $("zoom").addEventListener("change", (e) => {

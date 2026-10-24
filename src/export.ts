@@ -4,9 +4,14 @@ import { downloadBlob } from "./storage.ts";
 
 const MM = 96 / 25.4;
 
+interface Size {
+  width: number;
+  height: number;
+}
+
 export interface PageSize {
   label: string;
-  size: (paper: DOMRect) => { w: number; h: number };
+  size: (paper: Size) => { w: number; h: number };
 }
 
 export const PAGE_SIZES: Record<string, PageSize> = {
@@ -37,8 +42,13 @@ function toImage(paper: HTMLElement, width: number, height: number): Promise<HTM
   });
 }
 
+// 表示の倍率（transform: scale）に左右されない、紙面そのものの大きさ
+function sizeOf(paper: HTMLElement): Size {
+  return { width: paper.offsetWidth, height: paper.offsetHeight };
+}
+
 export async function paperToCanvas(paper: HTMLElement, scale: number): Promise<HTMLCanvasElement> {
-  const rect = paper.getBoundingClientRect();
+  const rect = sizeOf(paper);
   const width = Math.ceil(rect.width);
   const height = Math.ceil(rect.height);
   const img = await toImage(paper, width, height);
@@ -57,7 +67,7 @@ export async function downloadPng(paper: HTMLElement, scale: number): Promise<vo
 }
 
 export function printPdf(paper: HTMLElement, sizeKey: string): void {
-  const rect = paper.getBoundingClientRect();
+  const rect = sizeOf(paper);
   const page = (PAGE_SIZES[sizeKey] ?? PAGE_SIZES.fit!).size(rect);
   const zoom = Math.min(page.w / rect.width, page.h / rect.height);
 

@@ -1,8 +1,8 @@
 import { clampRect } from "./grid.ts";
-import { readImage } from "./image.ts";
+import { IMAGE_ERROR, readImage } from "./image.ts";
 import { KINDS, normalizePaper } from "./state.ts";
 import type { Store } from "./store.ts";
-import type { Item, Kind, Paper } from "./types.ts";
+import type { Item, Kind, Paper, PhotoItem } from "./types.ts";
 
 interface Field {
   key: string;
@@ -138,9 +138,22 @@ export function createPanel(host: HTMLElement, store: Store) {
     return group;
   }
 
-  function photoControls(item: Item): HTMLElement {
+  function photoControls(item: PhotoItem): HTMLElement {
     const wrap = document.createElement("div");
     wrap.className = "photo-controls";
+    // 選んだあとはパネルを描き直して欄が空に戻るので、入っている画像はサムネイルで見せる
+    let preview: HTMLElement;
+    if (item.image) {
+      const img = document.createElement("img");
+      img.className = "photo-thumb";
+      img.src = item.image;
+      img.alt = "入っている画像";
+      preview = img;
+    } else {
+      preview = document.createElement("p");
+      preview.className = "hint";
+      preview.textContent = "画像はまだありません。下で選ぶか、紙面の写真へ画像を落とします。";
+    }
     const file = input("file", "", { accept: "image/*" });
     file.value = "";
     file.addEventListener("change", async () => {
@@ -149,14 +162,15 @@ export function createPanel(host: HTMLElement, store: Store) {
       try {
         store.update(item.id, { image: await readImage(f) } as Partial<Item>, "other");
       } catch {
-        alert("画像を読み込めませんでした");
+        alert(IMAGE_ERROR);
       }
     });
     const clear = document.createElement("button");
     clear.type = "button";
     clear.textContent = "画像を外す";
+    clear.disabled = !item.image;
     clear.addEventListener("click", () => store.update(item.id, { image: "" } as Partial<Item>, "other"));
-    wrap.append(row("画像（端末の中だけで扱います）", file), clear);
+    wrap.append(preview, row("画像（端末の中だけで扱います）", file), clear);
     return wrap;
   }
 
