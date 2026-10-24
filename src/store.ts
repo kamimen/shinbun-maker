@@ -2,7 +2,7 @@ import { clampRect, findFreeRect, findNearestFreeRect } from "./grid.ts";
 import { History, KINDS, makeItem, resizePaper, switchWriting } from "./state.ts";
 import type { Item, Kind, Paper, Rect, State, Writing } from "./types.ts";
 
-export type Reason = "panel" | "drag" | "add" | "relayout" | "fit" | "other";
+export type Reason = "panel" | "drag" | "add" | "relayout" | "replace" | "layout" | "other";
 type Listener = (reason: Reason) => void;
 
 export class Store {
@@ -31,7 +31,7 @@ export class Store {
     this.history.push(this.state);
     this.state = state;
     this.selectedId = null;
-    this.emit("relayout");
+    this.emit("replace");
   }
 
   select(id: string | null): void {
@@ -68,9 +68,10 @@ export class Store {
     this.emit(reason);
   }
 
-  fit(rects: Map<string, Rect>): void {
+  applyLayout(rects: Map<string, Rect>, record = false): void {
+    if (record) this.history.push(this.state);
     this.state = { ...this.state, items: this.state.items.map((it) => ({ ...it, ...rects.get(it.id) }) as Item) };
-    this.emit("fit");
+    this.emit("layout");
   }
 
   reorder(id: string, delta: number): void {

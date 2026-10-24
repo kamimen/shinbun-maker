@@ -129,50 +129,6 @@ export function arrange<T extends Rect & { id: string }>(
   return items.map((it) => ({ ...it, ...placed.get(it.id)! }));
 }
 
-export interface Growth {
-  rect: Rect;
-  shrunk: { id: string; rect: Rect }[];
-}
-
-export function growOptions<T extends Rect & { id: string }>(
-  rect: Rect,
-  others: T[],
-  size: { dan: number; lines: number },
-  prefer: (it: T) => boolean = () => false,
-): Growth[] {
-  const candidates: { rect: Rect; strip: Rect; axis: "x" | "y"; at: number }[] = [
-    { rect: { ...rect, w: rect.w + 1 }, strip: { ...rect, x: rect.x + rect.w, w: 1 }, axis: "x", at: rect.x + rect.w },
-    { rect: { ...rect, x: rect.x - 1, w: rect.w + 1 }, strip: { ...rect, x: rect.x - 1, w: 1 }, axis: "x", at: rect.x - 1 },
-    { rect: { ...rect, span: rect.span + 1 }, strip: { ...rect, y: rect.y + rect.span, span: 1 }, axis: "y", at: rect.y + rect.span },
-    { rect: { ...rect, y: rect.y - 1, span: rect.span + 1 }, strip: { ...rect, y: rect.y - 1, span: 1 }, axis: "y", at: rect.y - 1 },
-  ];
-  const inside = (c: Rect) => c.x >= 1 && c.y >= 1 && c.x + c.w - 1 <= size.lines && c.y + c.span - 1 <= size.dan;
-  const ranked: { growth: Growth; rank: number }[] = [];
-  for (const c of candidates) {
-    if (!inside(c.rect)) continue;
-    const blockers = others.filter((o) => overlaps(c.strip, o));
-    const shrunk = blockers.map((b) => ({ id: b.id, rect: cutEdge(b, c.axis, c.at) }));
-    if (shrunk.some((b) => !b.rect)) continue;
-    const rank = blockers.length === 0 ? 0 : blockers.every(prefer) ? 1 : 2;
-    ranked.push({ growth: { rect: c.rect, shrunk: shrunk as Growth["shrunk"] }, rank });
-  }
-  return ranked.sort((a, b) => a.rank - b.rank).map((r) => r.growth);
-}
-
-function cutEdge({ x, w, y, span }: Rect, axis: "x" | "y", at: number): Rect | null {
-  const rect = { x, w, y, span };
-  if (axis === "x") {
-    if (rect.w < 2) return null;
-    if (at === rect.x) return { ...rect, x: rect.x + 1, w: rect.w - 1 };
-    if (at === rect.x + rect.w - 1) return { ...rect, w: rect.w - 1 };
-    return null;
-  }
-  if (rect.span < 2) return null;
-  if (at === rect.y) return { ...rect, y: rect.y + 1, span: rect.span - 1 };
-  if (at === rect.y + rect.span - 1) return { ...rect, span: rect.span - 1 };
-  return null;
-}
-
 export function overlappingIds(items: (Rect & { id: string })[]): Set<string> {
   const ids = new Set<string>();
   items.forEach((a, i) => {

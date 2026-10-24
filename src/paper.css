@@ -11,3 +11,9 @@
   overflow: clip;
   max-width: none;
 }
+
+.sb-paper .sb-page--grid > .sb-article,
+.sb-paper .sb-page--grid > .sb-box {
+  margin-inline-end: -0.1em;
+  margin-block-end: -0.1em;
+}

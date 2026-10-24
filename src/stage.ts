@@ -1,8 +1,9 @@
-import { autoTcy, findOverflow } from "../vendor/shinbun.js";
+import { autoTcy } from "../vendor/shinbun.js";
 import { axesOf, clampRect, indexAt, offsetOnAxis, overlappingIds, resizeRect, trackStarts } from "./grid.ts";
 import type { Box, Corner, Edge } from "./grid.ts";
 import { IMAGE_ERROR, readImage } from "./image.ts";
 import { buildPaper } from "./render.ts";
+import { overflows } from "./overflow.ts";
 import { autoSideways } from "./sideways.ts";
 import type { Store } from "./store.ts";
 import type { Rect } from "./types.ts";
@@ -51,10 +52,7 @@ function div(className: string, left: number, top: number, width: number, height
 }
 
 function overflowing(page: HTMLElement): Element[] {
-  const others = [...page.querySelectorAll<HTMLElement>(":scope > [data-id]:not(.sb-article)")].filter(
-    (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1,
-  );
-  return [...findOverflow(page), ...others];
+  return [...page.querySelectorAll<HTMLElement>(":scope > [data-id]")].filter(overflows);
 }
 
 export type Zoom = number | "fit";

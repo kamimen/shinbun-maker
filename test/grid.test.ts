@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { axesOf, trackStarts, indexAt, offsetOnAxis, overlaps, clampRect, findFreeRect, overlappingIds, resizeRect, nudge, arrange, findNearestFreeRect, growOptions, scaleRect } from "../src/grid.ts";
+import { axesOf, trackStarts, indexAt, offsetOnAxis, overlaps, clampRect, findFreeRect, overlappingIds, resizeRect, nudge, arrange, findNearestFreeRect, scaleRect } from "../src/grid.ts";
 
 test("縦組みは段が上から下、行が右から左", () => {
   const a = axesOf("vertical");
@@ -137,21 +137,4 @@ test("arrange: 重なった部品を置き直し、前から重なっていた�
   assert.deepEqual(out.map((it) => it.id), ["a", "b", "c"]);
   assert.ok(!overlaps(out[0]!, out[1]!));
   assert.deepEqual(out[2], items[2]);
-});
-
-test("growOptions: 空きへ広げる案が先。端でない部品からはもらわない", () => {
-  const size = { dan: 2, lines: 4 };
-  assert.deepEqual(growOptions({ x: 1, w: 2, y: 1, span: 1 }, [], size)[0], { rect: { x: 1, w: 3, y: 1, span: 1 }, shrunk: [] });
-  assert.deepEqual(growOptions({ x: 1, w: 4, y: 1, span: 2 }, [], size), []);
-  const wide = { id: "w", x: 1, w: 4, y: 2, span: 1 };
-  assert.ok(!growOptions({ x: 2, w: 1, y: 1, span: 1 }, [wide], { dan: 2, lines: 4 }).some((g) => g.shrunk.some((s) => s.id === "w" && s.rect.span === 0)));
-});
-
-test("growOptions: もらう案は、prefer の部品からを先に", () => {
-  const size = { dan: 1, lines: 5 };
-  const article = { id: "article", x: 1, w: 2, y: 1, span: 1 };
-  const ad = { id: "ad", x: 4, w: 2, y: 1, span: 1 };
-  const options = growOptions({ x: 3, w: 1, y: 1, span: 1 }, [article, ad], size, (it) => it.id === "ad");
-  assert.deepEqual(options.map((g) => g.shrunk.map((s) => s.id)), [["ad"], ["article"]]);
-  assert.deepEqual(options[0]?.shrunk[0]?.rect, { x: 5, w: 1, y: 1, span: 1 });
 });
