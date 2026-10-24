@@ -74,21 +74,19 @@ export function normalizeState(raw: unknown): State {
   const src = (raw ?? {}) as { paper?: Partial<Paper>; items?: unknown };
   const paper = normalizePaper(src.paper);
   const items: Item[] = [];
-  const given = new Map<string, Rect>();
   for (const entry of Array.isArray(src.items) ? src.items : []) {
     const it = entry as Record<string, unknown> | null;
     const kind = it?.kind as Kind | undefined;
     if (!it || !kind || !(kind in KINDS)) continue;
     const rect = clampRect({ x: Number(it.x), w: Number(it.w), y: Number(it.y), span: Number(it.span) }, paper);
     const id = typeof it.id === "string" && !items.some((o) => o.id === it.id) ? it.id : undefined;
-    const item = makeItem(kind, rect, { ...pickFields(kind, it), id }) as Item;
-    items.push(item);
-    given.set(item.id, { x: Number(it.x), w: Number(it.w), y: Number(it.y), span: Number(it.span) });
+    items.push(makeItem(kind, rect, { ...pickFields(kind, it), id }) as Item);
   }
-  return { paper, items: refit(items, paper, new Map(items.map((it) => [it.id, it])), given) };
+  return { paper, items: arrange(items, paper, new Map(items.map((it) => [it.id, it]))) };
 }
 
-export function refit(items: Item[], paper: Paper, targets: Map<string, Rect>, before: Map<string, Rect> = new Map(items.map((it) => [it.id, it]))): Item[] {
+export function refit(items: Item[], paper: Paper, targets: Map<string, Rect>): Item[] {
+  const before = new Map(items.map((it) => [it.id, it as Rect]));
   return arrange(items, paper, targets, (a, b) => overlaps(before.get(a.id)!, before.get(b.id)!));
 }
 

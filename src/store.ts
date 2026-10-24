@@ -31,7 +31,7 @@ export class Store {
     this.history.push(this.state);
     this.state = state;
     this.selectedId = null;
-    this.emit("other");
+    this.emit("relayout");
   }
 
   select(id: string | null): void {

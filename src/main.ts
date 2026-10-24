@@ -224,7 +224,7 @@ addEventListener("keydown", (e) => {
   }
 });
 
-void stage.render();
+void stage.render().then(() => growOverflowing("relayout"));
 panel.render();
 ($("undo") as HTMLButtonElement).disabled = true;
 ($("redo") as HTMLButtonElement).disabled = true;

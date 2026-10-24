@@ -8,6 +8,6 @@
 }
 
 .sb-paper .sb-page {
-  overflow: visible;
+  overflow: clip;
   max-width: none;
 }

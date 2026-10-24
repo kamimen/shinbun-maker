@@ -110,7 +110,7 @@ test("resizePaper: 増やしたときは、部品を動かさない", () => {
   assert.deepEqual(r.items, s.items);
 });
 
-test("normalizeState: 端に寄せて重なった部品は置き直す。id の重複は直す", () => {
+test("normalizeState: 重なった部品は置き直す。id の重複は直す", () => {
   const s = normalizeState({
     paper: { writing: "vertical", dan: 10, lines: 50 },
     items: [
@@ -124,4 +124,32 @@ test("normalizeState: 端に寄せて重なった部品は置き直す。id の�
 
 test("sampleState: 見本の部品は重ならない", () => {
   for (const writing of ["vertical", "horizontal"] as const) assert.equal(overlappingIds(sampleState(writing).items).size, 0, writing);
+});
+
+test("normalizeState: 保存したときから重なっていた部品も置き直す", () => {
+  const s = normalizeState({
+    paper: { writing: "horizontal", dan: 6, lines: 40 },
+    items: [
+      { id: "a", kind: "article", x: 1, w: 20, y: 1, span: 4 },
+      { id: "b", kind: "ad", x: 5, w: 10, y: 2, span: 2 },
+    ],
+  });
+  assert.equal(overlappingIds(s.items).size, 0);
+});
+
+test("normalizeState: 紙面より部品の面積が大きくても、重ならないように縮めて置く", () => {
+  const s = normalizeState({
+    paper: { writing: "horizontal", dan: 6, lines: 40 },
+    items: [
+      { id: "n", kind: "nameplate", x: 1, w: 8, y: 1, span: 3 },
+      { id: "y", kind: "yoko", x: 9, w: 26, y: 1, span: 2 },
+      { id: "a1", kind: "article", x: 9, w: 17, y: 2, span: 5 },
+      { id: "p", kind: "photo", x: 26, w: 9, y: 3, span: 3 },
+      { id: "a2", kind: "article", x: 26, w: 9, y: 5, span: 2 },
+      { id: "b", kind: "box", x: 33, w: 8, y: 1, span: 3 },
+      { id: "a3", kind: "article", x: 33, w: 8, y: 3, span: 4 },
+      { id: "ad", kind: "ad", x: 1, w: 40, y: 4, span: 3 },
+    ],
+  });
+  assert.equal(overlappingIds(s.items).size, 0);
 });

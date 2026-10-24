@@ -107,14 +107,21 @@ export function arrange<T extends Rect & { id: string }>(
   targets: Map<string, Rect>,
   keep: (a: T, b: T) => boolean = () => false,
 ): T[] {
+  const wants = new Map(items.map((it) => [it.id, clampRect(targets.get(it.id) ?? it, size)]));
+  const total = [...wants.values()].reduce((sum, r) => sum + r.w * r.span, 0);
+  const capacity = size.dan * size.lines;
+  if (total > capacity) {
+    const k = Math.sqrt(capacity / total);
+    for (const [id, r] of wants) wants.set(id, { ...r, w: Math.max(1, Math.floor(r.w * k)), span: Math.max(1, Math.floor(r.span * k)) });
+  }
   const placed = new Map<string, Rect>();
   const stays = (it: T) => {
-    const t = clampRect(targets.get(it.id) ?? it, size);
+    const t = wants.get(it.id)!;
     return t.x === it.x && t.y === it.y && t.w === it.w && t.span === it.span ? 0 : 1;
   };
   const order = [...items].sort((a, b) => stays(a) - stays(b) || b.w * b.span - a.w * a.span);
   for (const it of order) {
-    const want = clampRect(targets.get(it.id) ?? it, size);
+    const want = wants.get(it.id)!;
     const blockers = order.filter((o) => placed.has(o.id) && !keep(it, o)).map((o) => placed.get(o.id)!);
     const free = blockers.some((b) => overlaps(want, b)) ? findNearestFreeRect(blockers, size, want) : want;
     placed.set(it.id, free ?? want);
