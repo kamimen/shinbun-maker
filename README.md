@@ -41,4 +41,4 @@ Built with TypeScript and Vite. It uses shinbun.css (CSS and JavaScript) from `v
 
 [MIT License](LICENSE)
 
-This app does not imitate the pages of any particular newspaper. All content in the sample is fictional.
+This app does not imitate the pages of any particular newspaper. The sample page introduces the kamimen organization and its repositories.

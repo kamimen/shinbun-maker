@@ -25,7 +25,6 @@ export async function saveState(state: State): Promise<void> {
     });
     db.close();
   } catch {
-    // 保存できなくても、編集は続けられる
   }
 }
 

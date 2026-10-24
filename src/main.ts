@@ -5,12 +5,13 @@ import { PAGE_SIZES, downloadPng, printPdf } from "./export.ts";
 import { createPanel } from "./panel.ts";
 import { sampleState } from "./sample.ts";
 import { KINDS, KIND_LIST, createState, itemTitle } from "./state.ts";
-import { clampRect, nudge } from "./grid.ts";
+import { clampRect, growOptions, nudge } from "./grid.ts";
 import { createStage } from "./stage.ts";
 import type { Status } from "./stage.ts";
 import { exportJson, importJson, loadState, saveState } from "./storage.ts";
 import { Store } from "./store.ts";
-import type { State } from "./types.ts";
+import type { Reason } from "./store.ts";
+import type { Rect, State } from "./types.ts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -31,7 +32,10 @@ const store = new Store(initial);
 const stage = createStage($("stage"), store, showStatus, notify);
 const panel = createPanel($("panel"), store);
 
+let lastOverflow = new Set<string>();
+
 function showStatus({ overlap, overflow }: Status): void {
+  lastOverflow = overflow;
   const parts = [`部品 ${store.state.items.length} 個`];
   if (overlap.size) parts.push(`重なり ${overlap.size} 個`);
   if (overflow.size) parts.push(`はみ出し ${overflow.size} 個`);
@@ -70,9 +74,51 @@ for (const kind of KIND_LIST) {
 for (const [key, def] of Object.entries(PAGE_SIZES)) $("page-size").append(new Option(`PDF ${def.label}`, key));
 
 let saveTimer = 0;
+const rectOf = ({ x, w, y, span }: Rect): Rect => ({ x, w, y, span });
+let tried = new Set<string>();
+let trial: { before: Map<string, Rect>; donors: string[] } | null = null;
+let rounds = 0;
+
+function growOverflowing(reason: Reason): void {
+  if (reason === "relayout") {
+    tried = new Set();
+    trial = null;
+    rounds = 0;
+  }
+  if (++rounds > 500) return;
+  if (trial) {
+    const { before, donors } = trial;
+    trial = null;
+    if (donors.some((id) => lastOverflow.has(id))) {
+      store.fit(before);
+      return;
+    }
+  }
+  const { items, paper } = store.state;
+  for (const id of lastOverflow) {
+    const item = items.find((it) => it.id === id);
+    if (!item) continue;
+    const others = items.filter((it) => it.id !== id);
+    for (const g of growOptions(item, others, paper, (it) => it.kind === "ad" || it.kind === "photo")) {
+      if (g.shrunk.some((s) => lastOverflow.has(s.id))) continue;
+      const key = `${id}:${JSON.stringify(g.rect)}:${JSON.stringify(g.shrunk)}`;
+      if (tried.has(key)) continue;
+      tried.add(key);
+      if (g.shrunk.length) {
+        const before = new Map([[id, rectOf(item)]]);
+        for (const s of g.shrunk) before.set(s.id, rectOf(items.find((it) => it.id === s.id)!));
+        trial = { before, donors: g.shrunk.map((s) => s.id) };
+      }
+      store.fit(new Map([[id, g.rect], ...g.shrunk.map((s) => [s.id, s.rect] as const)]));
+      return;
+    }
+  }
+}
+
 store.subscribe((reason) => {
   void stage.render().then(() => {
     if (reason === "add" && store.selectedId) stage.reveal(store.selectedId);
+    if (reason === "relayout" || reason === "fit") growOverflowing(reason);
   });
   if (reason !== "panel") panel.render();
   ($("undo") as HTMLButtonElement).disabled = store.history.past.length === 0;
@@ -114,7 +160,6 @@ $("json-file").addEventListener("change", async (e) => {
   }
   input.value = "";
 });
-// 紙面の外に画像を落としたとき、ブラウザが画像を開いて、編集中の画面から離れないようにする
 const isFileDrag = (e: DragEvent) => Boolean(e.dataTransfer?.types.includes("Files"));
 const onFileInput = (e: DragEvent) => e.target instanceof HTMLInputElement && e.target.type === "file";
 addEventListener("dragover", (e) => {

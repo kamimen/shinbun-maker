@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createState, normalizeState, normalizePaper, makeItem, History, switchWriting, KINDS, PAPER_DEFAULTS } from "../src/state.ts";
+import { createState, normalizeState, normalizePaper, makeItem, History, switchWriting, resizePaper, KINDS, PAPER_DEFAULTS } from "../src/state.ts";
+import { overlappingIds } from "../src/grid.ts";
+import { sampleState } from "../src/sample.ts";
 
 const r = { x: 1, w: 1, y: 1, span: 1 };
 
@@ -82,4 +84,44 @@ test("switchWriting: 紙面の設定が初期値になり、部品は収め直�
   assert.equal(h.paper.writing, "horizontal");
   assert.ok(it.x + it.w - 1 <= h.paper.lines);
   assert.ok(it.y + it.span - 1 <= h.paper.dan);
+});
+
+test("switchWriting: 見本を切り替えても、部品は重ならない", () => {
+  for (const [from, to] of [["vertical", "horizontal"], ["horizontal", "vertical"]] as const) {
+    const s = switchWriting(sampleState(from), to);
+    assert.equal(overlappingIds(s.items).size, 0, `${from} → ${to}`);
+    assert.equal(s.items.length, sampleState(from).items.length);
+  }
+});
+
+test("resizePaper: 段数や行数を減らしても、部品は重ならない", () => {
+  for (const writing of ["vertical", "horizontal"] as const) {
+    const s = sampleState(writing);
+    for (const change of [{ lines: 20 }, { dan: 4 }, { dan: 5, lines: 30 }]) {
+      const r = resizePaper(s, { ...s.paper, ...change });
+      assert.equal(overlappingIds(r.items).size, 0, `${writing} ${JSON.stringify(change)}`);
+    }
+  }
+});
+
+test("resizePaper: 増やしたときは、部品を動かさない", () => {
+  const s = sampleState("vertical");
+  const r = resizePaper(s, { ...s.paper, dan: 12, lines: 60 });
+  assert.deepEqual(r.items, s.items);
+});
+
+test("normalizeState: 端に寄せて重なった部品は置き直す。id の重複は直す", () => {
+  const s = normalizeState({
+    paper: { writing: "vertical", dan: 10, lines: 50 },
+    items: [
+      { id: "a", kind: "box", x: 41, w: 10, y: 1, span: 3 },
+      { id: "a", kind: "box", x: 70, w: 10, y: 1, span: 3 },
+    ],
+  });
+  assert.notEqual(s.items[0]?.id, s.items[1]?.id);
+  assert.equal(overlappingIds(s.items).size, 0);
+});
+
+test("sampleState: 見本の部品は重ならない", () => {
+  for (const writing of ["vertical", "horizontal"] as const) assert.equal(overlappingIds(sampleState(writing).items).size, 0, writing);
 });

@@ -1,4 +1,4 @@
-import { LIMITS, clampRect } from "./grid.ts";
+import { LIMITS, arrange, clampRect, overlaps, scaleRect } from "./grid.ts";
 import type { Item, Kind, Paper, Rect, State, Writing } from "./types.ts";
 
 export const PAPER_DEFAULTS: Record<Writing, Paper> = {
@@ -74,15 +74,22 @@ export function normalizeState(raw: unknown): State {
   const src = (raw ?? {}) as { paper?: Partial<Paper>; items?: unknown };
   const paper = normalizePaper(src.paper);
   const items: Item[] = [];
+  const given = new Map<string, Rect>();
   for (const entry of Array.isArray(src.items) ? src.items : []) {
     const it = entry as Record<string, unknown> | null;
     const kind = it?.kind as Kind | undefined;
     if (!it || !kind || !(kind in KINDS)) continue;
     const rect = clampRect({ x: Number(it.x), w: Number(it.w), y: Number(it.y), span: Number(it.span) }, paper);
-    const id = typeof it.id === "string" ? it.id : undefined;
-    items.push(makeItem(kind, rect, { ...pickFields(kind, it), id }) as Item);
+    const id = typeof it.id === "string" && !items.some((o) => o.id === it.id) ? it.id : undefined;
+    const item = makeItem(kind, rect, { ...pickFields(kind, it), id }) as Item;
+    items.push(item);
+    given.set(item.id, { x: Number(it.x), w: Number(it.w), y: Number(it.y), span: Number(it.span) });
   }
-  return { paper, items };
+  return { paper, items: refit(items, paper, new Map(items.map((it) => [it.id, it])), given) };
+}
+
+export function refit(items: Item[], paper: Paper, targets: Map<string, Rect>, before: Map<string, Rect> = new Map(items.map((it) => [it.id, it]))): Item[] {
+  return arrange(items, paper, targets, (a, b) => overlaps(before.get(a.id)!, before.get(b.id)!));
 }
 
 export class History {
@@ -118,7 +125,14 @@ export class History {
 
 export function switchWriting(state: State, writing: Writing): State {
   const paper = { ...PAPER_DEFAULTS[writing] };
-  return { paper, items: state.items.map((it) => ({ ...it, ...clampRect(it, paper) })) };
+  const targets = new Map(state.items.map((it) => [it.id, scaleRect(it, state.paper, paper)]));
+  return { paper, items: refit(state.items, paper, targets) };
+}
+
+export function resizePaper(state: State, paper: Paper): State {
+  const from = { dan: Math.max(state.paper.dan, paper.dan), lines: Math.max(state.paper.lines, paper.lines) };
+  const targets = new Map(state.items.map((it) => [it.id, scaleRect(it, from, paper)]));
+  return { paper, items: refit(state.items, paper, targets) };
 }
 
 export function itemTitle(it: Item): string {

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { axesOf, trackStarts, indexAt, offsetOnAxis, overlaps, clampRect, findFreeRect, overlappingIds, resizeRect, nudge } from "../src/grid.ts";
+import { axesOf, trackStarts, indexAt, offsetOnAxis, overlaps, clampRect, findFreeRect, overlappingIds, resizeRect, nudge, arrange, findNearestFreeRect, growOptions, scaleRect } from "../src/grid.ts";
 
 test("縦組みは段が上から下、行が右から左", () => {
   const a = axesOf("vertical");
@@ -109,4 +109,49 @@ test("nudge: Shift 付きは、大きさを変える。矢印以外は null", ()
   const r = { x: 5, w: 4, y: 3, span: 2 };
   assert.deepEqual(nudge(r, "ArrowDown", "vertical", true), { x: 5, w: 4, y: 3, span: 3 });
   assert.equal(nudge(r, "a", "vertical", false), null);
+});
+
+test("scaleRect: 割合を保って、別の大きさの紙面へ移す", () => {
+  assert.deepEqual(scaleRect({ x: 1, w: 25, y: 6, span: 5 }, { dan: 10, lines: 50 }, { dan: 6, lines: 40 }), { x: 1, w: 20, y: 4, span: 3 });
+});
+
+test("findNearestFreeRect: 重なるときは、いちばん近い空きへ", () => {
+  const size = { dan: 4, lines: 10 };
+  assert.deepEqual(findNearestFreeRect([{ x: 1, w: 5, y: 1, span: 4 }], size, { x: 3, w: 3, y: 2, span: 2 }), { x: 6, w: 3, y: 2, span: 2 });
+});
+
+test("findNearestFreeRect: 同じ大きさで置けなければ小さくし、置けなければ null", () => {
+  const size = { dan: 2, lines: 4 };
+  assert.deepEqual(findNearestFreeRect([{ x: 1, w: 3, y: 1, span: 2 }], size, { x: 1, w: 2, y: 1, span: 2 }), { x: 4, w: 1, y: 1, span: 2 });
+  assert.equal(findNearestFreeRect([{ x: 1, w: 4, y: 1, span: 2 }], size, { x: 1, w: 1, y: 1, span: 1 }), null);
+});
+
+test("arrange: 重なった部品を置き直し、前から重なっていた組は残す", () => {
+  const size = { dan: 4, lines: 10 };
+  const items = [
+    { id: "a", x: 1, w: 5, y: 1, span: 4 },
+    { id: "b", x: 3, w: 2, y: 1, span: 2 },
+    { id: "c", x: 3, w: 2, y: 3, span: 2 },
+  ];
+  const out = arrange(items, size, new Map(), (p, q) => [p.id, q.id].sort().join() === "a,c");
+  assert.deepEqual(out.map((it) => it.id), ["a", "b", "c"]);
+  assert.ok(!overlaps(out[0]!, out[1]!));
+  assert.deepEqual(out[2], items[2]);
+});
+
+test("growOptions: 空きへ広げる案が先。端でない部品からはもらわない", () => {
+  const size = { dan: 2, lines: 4 };
+  assert.deepEqual(growOptions({ x: 1, w: 2, y: 1, span: 1 }, [], size)[0], { rect: { x: 1, w: 3, y: 1, span: 1 }, shrunk: [] });
+  assert.deepEqual(growOptions({ x: 1, w: 4, y: 1, span: 2 }, [], size), []);
+  const wide = { id: "w", x: 1, w: 4, y: 2, span: 1 };
+  assert.ok(!growOptions({ x: 2, w: 1, y: 1, span: 1 }, [wide], { dan: 2, lines: 4 }).some((g) => g.shrunk.some((s) => s.id === "w" && s.rect.span === 0)));
+});
+
+test("growOptions: もらう案は、prefer の部品からを先に", () => {
+  const size = { dan: 1, lines: 5 };
+  const article = { id: "article", x: 1, w: 2, y: 1, span: 1 };
+  const ad = { id: "ad", x: 4, w: 2, y: 1, span: 1 };
+  const options = growOptions({ x: 3, w: 1, y: 1, span: 1 }, [article, ad], size, (it) => it.id === "ad");
+  assert.deepEqual(options.map((g) => g.shrunk.map((s) => s.id)), [["ad"], ["article"]]);
+  assert.deepEqual(options[0]?.shrunk[0]?.rect, { x: 5, w: 1, y: 1, span: 1 });
 });

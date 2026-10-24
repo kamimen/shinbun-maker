@@ -3,6 +3,7 @@ import { axesOf, clampRect, indexAt, offsetOnAxis, overlappingIds, resizeRect, t
 import type { Box, Corner, Edge } from "./grid.ts";
 import { IMAGE_ERROR, readImage } from "./image.ts";
 import { buildPaper } from "./render.ts";
+import { autoSideways } from "./sideways.ts";
 import type { Store } from "./store.ts";
 import type { Rect } from "./types.ts";
 
@@ -47,6 +48,13 @@ function div(className: string, left: number, top: number, width: number, height
   node.className = className;
   node.style.cssText = `left:${left}px;top:${top}px;width:${width}px;height:${height}px`;
   return node;
+}
+
+function overflowing(page: HTMLElement): Element[] {
+  const others = [...page.querySelectorAll<HTMLElement>(":scope > [data-id]:not(.sb-article)")].filter(
+    (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1,
+  );
+  return [...findOverflow(page), ...others];
 }
 
 export type Zoom = number | "fit";
@@ -167,7 +175,10 @@ export function createStage(host: HTMLElement, store: Store, onStatus: (s: Statu
     const scroll = { left: wrap.scrollLeft, top: wrap.scrollTop };
     paperEl = buildPaper(store.state);
     host.replaceChildren(paperEl);
-    if (store.state.paper.writing === "vertical") autoTcy(paperEl);
+    if (store.state.paper.writing === "vertical") {
+      autoTcy(paperEl);
+      autoSideways(paperEl);
+    }
     const selected = store.selectedId && itemEl(store.selectedId);
     if (selected) selected.setAttribute("data-selected", "");
     applyScale();
@@ -179,12 +190,12 @@ export function createStage(host: HTMLElement, store: Store, onStatus: (s: Statu
     const page = paperEl.querySelector<HTMLElement>(".sb-page")!;
     metrics = measure(page, host, scale);
     const ids = (els: Element[]) => new Set(els.map((e) => (e as HTMLElement).dataset.id ?? ""));
-    drawOverlay(ids(findOverflow(page)));
+    drawOverlay(ids(overflowing(page)));
     await document.fonts.ready;
     if (paperEl && host.contains(paperEl)) {
       applyScale();
       metrics = measure(page, host, scale);
-      drawOverlay(ids(findOverflow(page)));
+      drawOverlay(ids(overflowing(page)));
     }
   }
 
@@ -222,7 +233,6 @@ export function createStage(host: HTMLElement, store: Store, onStatus: (s: Statu
     drag.moved = true;
   });
 
-  // 紙面のまわりの余白に落としても受け取る
   wrap.addEventListener("dragover", (e) => {
     if (e.dataTransfer?.types.includes("Files")) e.preventDefault();
   });

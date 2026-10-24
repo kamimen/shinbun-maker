@@ -67,6 +67,105 @@ export function findFreeRect(others: Rect[], size: { dan: number; lines: number 
   return fit;
 }
 
+export function scaleRect(rect: Rect, from: { dan: number; lines: number }, to: { dan: number; lines: number }): Rect {
+  const kx = to.lines / from.lines;
+  const ky = to.dan / from.dan;
+  const x = Math.round((rect.x - 1) * kx) + 1;
+  const y = Math.round((rect.y - 1) * ky) + 1;
+  const xEnd = Math.round((rect.x - 1 + rect.w) * kx);
+  const yEnd = Math.round((rect.y - 1 + rect.span) * ky);
+  return clampRect({ x, y, w: Math.max(1, xEnd - x + 1), span: Math.max(1, yEnd - y + 1) }, to);
+}
+
+export function findNearestFreeRect(others: Rect[], size: { dan: number; lines: number }, want: Rect): Rect | null {
+  const fit = clampRect(want, size);
+  const sizes: { w: number; span: number }[] = [];
+  for (let w = fit.w; w >= 1; w--) for (let span = fit.span; span >= 1; span--) sizes.push({ w, span });
+  sizes.sort((a, b) => b.w * b.span - a.w * a.span);
+  for (const { w, span } of sizes) {
+    let best: Rect | null = null;
+    let bestDist = Infinity;
+    for (let y = 1; y + span - 1 <= size.dan; y++) {
+      for (let x = 1; x + w - 1 <= size.lines; x++) {
+        const cand = { x, y, w, span };
+        if (others.some((o) => overlaps(cand, o))) continue;
+        const dist = Math.abs(x - fit.x) / size.lines + Math.abs(y - fit.y) / size.dan;
+        if (dist < bestDist) {
+          best = cand;
+          bestDist = dist;
+        }
+      }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+export function arrange<T extends Rect & { id: string }>(
+  items: T[],
+  size: { dan: number; lines: number },
+  targets: Map<string, Rect>,
+  keep: (a: T, b: T) => boolean = () => false,
+): T[] {
+  const placed = new Map<string, Rect>();
+  const stays = (it: T) => {
+    const t = clampRect(targets.get(it.id) ?? it, size);
+    return t.x === it.x && t.y === it.y && t.w === it.w && t.span === it.span ? 0 : 1;
+  };
+  const order = [...items].sort((a, b) => stays(a) - stays(b) || b.w * b.span - a.w * a.span);
+  for (const it of order) {
+    const want = clampRect(targets.get(it.id) ?? it, size);
+    const blockers = order.filter((o) => placed.has(o.id) && !keep(it, o)).map((o) => placed.get(o.id)!);
+    const free = blockers.some((b) => overlaps(want, b)) ? findNearestFreeRect(blockers, size, want) : want;
+    placed.set(it.id, free ?? want);
+  }
+  return items.map((it) => ({ ...it, ...placed.get(it.id)! }));
+}
+
+export interface Growth {
+  rect: Rect;
+  shrunk: { id: string; rect: Rect }[];
+}
+
+export function growOptions<T extends Rect & { id: string }>(
+  rect: Rect,
+  others: T[],
+  size: { dan: number; lines: number },
+  prefer: (it: T) => boolean = () => false,
+): Growth[] {
+  const candidates: { rect: Rect; strip: Rect; axis: "x" | "y"; at: number }[] = [
+    { rect: { ...rect, w: rect.w + 1 }, strip: { ...rect, x: rect.x + rect.w, w: 1 }, axis: "x", at: rect.x + rect.w },
+    { rect: { ...rect, x: rect.x - 1, w: rect.w + 1 }, strip: { ...rect, x: rect.x - 1, w: 1 }, axis: "x", at: rect.x - 1 },
+    { rect: { ...rect, span: rect.span + 1 }, strip: { ...rect, y: rect.y + rect.span, span: 1 }, axis: "y", at: rect.y + rect.span },
+    { rect: { ...rect, y: rect.y - 1, span: rect.span + 1 }, strip: { ...rect, y: rect.y - 1, span: 1 }, axis: "y", at: rect.y - 1 },
+  ];
+  const inside = (c: Rect) => c.x >= 1 && c.y >= 1 && c.x + c.w - 1 <= size.lines && c.y + c.span - 1 <= size.dan;
+  const ranked: { growth: Growth; rank: number }[] = [];
+  for (const c of candidates) {
+    if (!inside(c.rect)) continue;
+    const blockers = others.filter((o) => overlaps(c.strip, o));
+    const shrunk = blockers.map((b) => ({ id: b.id, rect: cutEdge(b, c.axis, c.at) }));
+    if (shrunk.some((b) => !b.rect)) continue;
+    const rank = blockers.length === 0 ? 0 : blockers.every(prefer) ? 1 : 2;
+    ranked.push({ growth: { rect: c.rect, shrunk: shrunk as Growth["shrunk"] }, rank });
+  }
+  return ranked.sort((a, b) => a.rank - b.rank).map((r) => r.growth);
+}
+
+function cutEdge({ x, w, y, span }: Rect, axis: "x" | "y", at: number): Rect | null {
+  const rect = { x, w, y, span };
+  if (axis === "x") {
+    if (rect.w < 2) return null;
+    if (at === rect.x) return { ...rect, x: rect.x + 1, w: rect.w - 1 };
+    if (at === rect.x + rect.w - 1) return { ...rect, w: rect.w - 1 };
+    return null;
+  }
+  if (rect.span < 2) return null;
+  if (at === rect.y) return { ...rect, y: rect.y + 1, span: rect.span - 1 };
+  if (at === rect.y + rect.span - 1) return { ...rect, span: rect.span - 1 };
+  return null;
+}
+
 export function overlappingIds(items: (Rect & { id: string })[]): Set<string> {
   const ids = new Set<string>();
   items.forEach((a, i) => {

@@ -1,8 +1,8 @@
-import { clampRect, findFreeRect } from "./grid.ts";
-import { History, KINDS, makeItem, switchWriting } from "./state.ts";
+import { clampRect, findFreeRect, findNearestFreeRect } from "./grid.ts";
+import { History, KINDS, makeItem, resizePaper, switchWriting } from "./state.ts";
 import type { Item, Kind, Paper, Rect, State, Writing } from "./types.ts";
 
-export type Reason = "panel" | "drag" | "add" | "other";
+export type Reason = "panel" | "drag" | "add" | "relayout" | "fit" | "other";
 type Listener = (reason: Reason) => void;
 
 export class Store {
@@ -42,7 +42,9 @@ export class Store {
 
   add(kind: Kind, overrides: Partial<Item> = {}, at?: { x: number; y: number }): void {
     const { w, span } = KINDS[kind].size;
-    const rect = at ? clampRect({ ...at, w, span }, this.state.paper) : findFreeRect(this.state.items, this.state.paper, w, span);
+    const { items, paper } = this.state;
+    const want = at ? clampRect({ ...at, w, span }, paper) : findFreeRect(items, paper, w, span);
+    const rect = findNearestFreeRect(items, paper, want) ?? want;
     const item = makeItem(kind, rect, overrides as never) as Item;
     this.history.push(this.state);
     this.state = { ...this.state, items: [...this.state.items, item] };
@@ -66,6 +68,11 @@ export class Store {
     this.emit(reason);
   }
 
+  fit(rects: Map<string, Rect>): void {
+    this.state = { ...this.state, items: this.state.items.map((it) => ({ ...it, ...rects.get(it.id) }) as Item) };
+    this.emit("fit");
+  }
+
   reorder(id: string, delta: number): void {
     const items = [...this.state.items];
     const from = items.findIndex((it) => it.id === id);
@@ -80,14 +87,14 @@ export class Store {
 
   setPaper(paper: Paper): void {
     this.history.push(this.state);
-    this.state = { ...this.state, paper };
-    this.emit("other");
+    this.state = resizePaper(this.state, paper);
+    this.emit("relayout");
   }
 
   setWriting(writing: Writing): void {
     this.history.push(this.state);
     this.state = switchWriting(this.state, writing);
-    this.emit("other");
+    this.emit("relayout");
   }
 
   undo(): void {

@@ -42,7 +42,6 @@ function toImage(paper: HTMLElement, width: number, height: number): Promise<HTM
   });
 }
 
-// 表示の倍率（transform: scale）に左右されない、紙面そのものの大きさ
 function sizeOf(paper: HTMLElement): Size {
   return { width: paper.offsetWidth, height: paper.offsetHeight };
 }

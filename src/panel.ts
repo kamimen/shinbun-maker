@@ -141,7 +141,6 @@ export function createPanel(host: HTMLElement, store: Store) {
   function photoControls(item: PhotoItem): HTMLElement {
     const wrap = document.createElement("div");
     wrap.className = "photo-controls";
-    // 選んだあとはパネルを描き直して欄が空に戻るので、入っている画像はサムネイルで見せる
     let preview: HTMLElement;
     if (item.image) {
       const img = document.createElement("img");
